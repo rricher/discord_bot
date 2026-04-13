@@ -77,7 +77,7 @@ function playNext(guildId) {
     '--no-playlist',
     '-q',
     '--cookies', join(__dirname, 'cookies.txt'),
-    '--js-runtimes', 'node:/usr/local/bin/node',
+    '--js-runtimes', 'deno:/usr/local/bin/deno',
   ]);
   proc.stderr.on('data', (d) => console.error('yt-dlp:', d.toString().trim()));
 
