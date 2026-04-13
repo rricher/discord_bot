@@ -70,7 +70,15 @@ function playNext(guildId) {
   const url = data.queue.shift();
   data.current = url;
 
-  const proc = spawn(YTDLP, [url, '-f', 'bestaudio/best', '-o', '-', '--no-playlist', '-q', `--js-runtimes=node:${process.execPath}`]);
+  const proc = spawn(YTDLP, [
+    url,
+    '-f', 'bestaudio/best',
+    '-o', '-',
+    '--no-playlist',
+    '-q',
+    `--js-runtimes=node:${process.execPath}`,
+    '--extractor-args', 'youtube:player_client=android',
+  ]);
   proc.stderr.on('data', (d) => console.error('yt-dlp:', d.toString().trim()));
 
   const resource = createAudioResource(proc.stdout);
