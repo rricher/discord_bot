@@ -5,6 +5,7 @@ import {
   InteractionType,
   verifyKeyMiddleware,
 } from 'discord-interactions';
+import { DiscordRequest } from './utils.js';
 import * as voiceClient from './voiceClient.js';
 
 const app = express();
@@ -23,7 +24,7 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
     // "/play <url>" — join voice channel and stream audio
     if (name === 'play') {
       const url = data.options?.find((o) => o.name === 'url')?.value;
-      const { guild_id, member } = req.body;
+      const { guild_id, member, token } = req.body;
 
       const channel = voiceClient.getUserVoiceChannel(guild_id, member.user.id);
       if (!channel) {
@@ -33,12 +34,28 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
         });
       }
 
-      const { nowPlaying, position } = voiceClient.play(guild_id, channel, url);
-      const msg = nowPlaying ? `Now playing: ${url}` : `Added to queue at position ${position}: ${url}`;
-      return res.send({
-        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-        data: { content: msg },
-      });
+      res.send({ type: InteractionResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE });
+
+      voiceClient.play(guild_id, channel, url)
+        .then(({ nowPlaying, position, count }) => {
+          const tracked = count > 1 ? ` (${count} tracks)` : '';
+          const msg = nowPlaying
+            ? `Now playing${tracked}: ${url}`
+            : `Added to queue at position ${position}${tracked}: ${url}`;
+          return DiscordRequest(`webhooks/${process.env.APP_ID}/${token}/messages/@original`, {
+            method: 'PATCH',
+            body: { content: msg },
+          });
+        })
+        .catch((err) => {
+          console.error('Play error:', err);
+          DiscordRequest(`webhooks/${process.env.APP_ID}/${token}/messages/@original`, {
+            method: 'PATCH',
+            body: { content: `Failed to play: ${url}` },
+          }).catch(console.error);
+        });
+
+      return;
     }
 
     // "/stop" — clear queue and disconnect

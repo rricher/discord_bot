@@ -56,6 +56,35 @@ export function getUserVoiceChannel(guildId, userId) {
   return guild?.voiceStates.cache.get(userId)?.channel ?? null;
 }
 
+function resolveUrls(url) {
+  return new Promise((resolve, reject) => {
+    const proc = spawn(YTDLP, [
+      url,
+      '--flat-playlist',
+      '-j',
+      '--cookies', join(__dirname, 'cookies.txt'),
+      '-q',
+    ]);
+    const urls = [];
+    let buf = '';
+    proc.stdout.on('data', (d) => {
+      buf += d.toString();
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const entry = JSON.parse(line);
+          urls.push(entry.url ?? entry.webpage_url);
+        } catch {}
+      }
+    });
+    proc.stderr.on('data', (d) => console.error('yt-dlp:', d.toString().trim()));
+    proc.on('close', () => resolve(urls.length > 0 ? urls : [url]));
+    proc.on('error', reject);
+  });
+}
+
 function playNext(guildId) {
   const data = guildData.get(guildId);
   if (!data || data.aborted || data.queue.length === 0) {
@@ -85,7 +114,9 @@ function playNext(guildId) {
   data.player.play(resource);
 }
 
-export function play(guildId, channel, url) {
+export async function play(guildId, channel, url) {
+  const urls = await resolveUrls(url);
+
   let data = guildData.get(guildId);
 
   if (!data) {
@@ -110,14 +141,14 @@ export function play(guildId, channel, url) {
   }
 
   const isIdle = data.player.state.status === AudioPlayerStatus.Idle;
-  data.queue.push(url);
+  data.queue.push(...urls);
 
   if (isIdle) {
     playNext(guildId);
-    return { nowPlaying: true };
+    return { nowPlaying: true, count: urls.length };
   }
 
-  return { nowPlaying: false, position: data.queue.length };
+  return { nowPlaying: false, position: data.queue.length, count: urls.length };
 }
 
 export function stop(guildId) {
