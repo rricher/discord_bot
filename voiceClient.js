@@ -8,7 +8,7 @@ import {
   NoSubscriberBehavior,
 } from '@discordjs/voice';
 import { spawn } from 'child_process';
-import { existsSync, createWriteStream, chmodSync } from 'fs';
+import { existsSync, createWriteStream, chmodSync, statSync } from 'fs';
 import { Readable } from 'stream';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -17,7 +17,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const YTDLP = join(__dirname, process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp');
 
 // Auto-download yt-dlp binary on first run
-if (!existsSync(YTDLP)) {
+if (!existsSync(YTDLP) || statSync(YTDLP).isDirectory()) {
   console.log('Downloading yt-dlp...');
   const releaseRes = await fetch('https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest', {
     headers: { 'User-Agent': 'discord-music-bot' },
