@@ -23,7 +23,7 @@ if (!existsSync(YTDLP) || statSync(YTDLP).isDirectory()) {
     headers: { 'User-Agent': 'discord-music-bot' },
   });
   const release = await releaseRes.json();
-  const assetName = process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp';
+  const assetName = process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp_linux';
   const asset = release.assets.find((a) => a.name === assetName);
   const downloadRes = await fetch(asset.browser_download_url);
   await new Promise((resolve, reject) => {
