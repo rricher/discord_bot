@@ -76,8 +76,7 @@ function playNext(guildId) {
     '-o', '-',
     '--no-playlist',
     '-q',
-    '--cookies', join(__dirname, 'cookies.txt'),
-    '--extractor-args', 'youtube:player_client=android,web',
+    '--extractor-args', 'youtube:player_client=android_vr',
   ]);
   proc.stderr.on('data', (d) => console.error('yt-dlp:', d.toString().trim()));
 
