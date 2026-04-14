@@ -99,6 +99,7 @@ function playNext(guildId) {
   const url = data.queue.shift();
   data.current = url;
 
+  data.proc?.kill();
   const proc = spawn(YTDLP, [
     url,
     '-f', 'bestaudio/best',
@@ -108,6 +109,7 @@ function playNext(guildId) {
     '--cookies', join(__dirname, 'cookies.txt'),
     '--js-runtimes', 'deno:/usr/local/bin/deno',
   ]);
+  data.proc = proc;
   proc.stderr.on('data', (d) => console.error('yt-dlp:', d.toString().trim()));
 
   const resource = createAudioResource(proc.stdout);
@@ -136,7 +138,7 @@ export async function play(guildId, channel, url) {
       playNext(guildId);
     });
 
-    data = { queue: [], player, connection, current: null, aborted: false };
+    data = { queue: [], player, connection, current: null, aborted: false, proc: null };
     guildData.set(guildId, data);
   }
 
@@ -157,6 +159,7 @@ export function stop(guildId) {
   data.aborted = true;
   data.queue = [];
   guildData.delete(guildId);
+  data.proc?.kill();
   data.player.stop();
   data.connection.destroy();
   return true;
@@ -177,6 +180,7 @@ export function resume(guildId) {
 export function skip(guildId) {
   const data = guildData.get(guildId);
   if (!data) return false;
+  data.proc?.kill();
   data.player.stop();
   return true;
 }
