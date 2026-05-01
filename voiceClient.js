@@ -6,6 +6,8 @@ import {
   createAudioResource,
   AudioPlayerStatus,
   NoSubscriberBehavior,
+  VoiceConnectionStatus,
+  entersState,
 } from '@discordjs/voice';
 import { spawn } from 'child_process';
 import { existsSync, createWriteStream, chmodSync, statSync } from 'fs';
@@ -143,10 +145,17 @@ export async function play(guildId, channel, url) {
     data = { queue: [], player, connection, current: null, aborted: false, proc: null };
     guildData.set(guildId, data);
 
-    // Play join sound before queued tracks
-    const joinClip = createAudioResource(join(__dirname, 'join.mp3'));
+    // Play join sound before queued tracks once connection is ready
     data.queue.push(...urls);
-    player.play(joinClip);
+    entersState(connection, VoiceConnectionStatus.Ready, 10_000)
+      .then(() => {
+        const joinClip = createAudioResource(join(__dirname, 'join.mp3'));
+        player.play(joinClip);
+      })
+      .catch((err) => {
+        console.error('Connection never became ready:', err);
+        playNext(guildId);
+      });
     return { nowPlaying: true, count: urls.length };
   }
 
