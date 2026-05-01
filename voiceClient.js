@@ -142,6 +142,12 @@ export async function play(guildId, channel, url) {
 
     data = { queue: [], player, connection, current: null, aborted: false, proc: null };
     guildData.set(guildId, data);
+
+    // Play join sound before queued tracks
+    const joinClip = createAudioResource(join(__dirname, 'join.mp3'));
+    data.queue.push(...urls);
+    player.play(joinClip);
+    return { nowPlaying: true, count: urls.length };
   }
 
   const isIdle = data.player.state.status === AudioPlayerStatus.Idle;

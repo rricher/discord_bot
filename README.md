@@ -1,108 +1,125 @@
-# Getting Started app for Discord
+# Discord Music Bot
 
-This project contains a basic rock-paper-scissors-style Discord app written in JavaScript, built for the [getting started guide](https://discord.com/developers/docs/getting-started).
+A Discord bot that joins voice channels and plays audio from YouTube and SoundCloud URLs. Supports playlists, queuing, and playback controls.
 
-![Demo of app](https://github.com/discord/discord-example-app/raw/main/assets/getting-started-demo.gif?raw=true)
+## Commands
 
-## Project structure
-Below is a basic overview of the project structure:
+| Command | Description |
+|---------|-------------|
+| `/play <url>` | Play a YouTube or SoundCloud URL in your voice channel. Supports playlists. |
+| `/pause` | Pause the current track |
+| `/resume` | Resume the paused track |
+| `/skip` | Skip to the next track in the queue |
+| `/queue` | Show the current queue |
+| `/stop` | Stop playback and disconnect from voice |
 
-```
-├── examples    -> short, feature-specific sample apps
-│   ├── app.js  -> finished app.js code
-│   ├── button.js
-│   ├── command.js
-│   ├── modal.js
-│   ├── selectMenu.js
-├── .env.sample -> sample .env file
-├── app.js      -> main entrypoint for app
-├── commands.js -> slash command payloads + helpers
-├── game.js     -> logic specific to RPS
-├── utils.js    -> utility functions and enums
-├── package.json
-├── README.md
-└── .gitignore
-```
+## Architecture
 
-## Running app locally
+- **Express** handles Discord HTTP interactions (slash commands)
+- **discord.js** gateway client manages voice channel connections
+- **yt-dlp** extracts audio streams from YouTube/SoundCloud
+- **Deno** is used by yt-dlp for JavaScript signature solving (required for YouTube)
+- **@discordjs/voice** handles audio playback
 
-Before you start, you'll need to install [NodeJS](https://nodejs.org/en/download/) and [create a Discord app](https://discord.com/developers/applications) with the proper permissions:
-- `applications.commands`
-- `bot` (with Send Messages enabled)
+## Prerequisites
 
+- [Node.js](https://nodejs.org/) >= 18
+- [Docker](https://www.docker.com/) and Docker Compose (for containerized deployment)
+- A [Discord application](https://discord.com/developers/applications) with a bot token
 
-Configuring the app is covered in detail in the [getting started guide](https://discord.com/developers/docs/getting-started).
+## Environment Variables
 
-### Setup project
+Create a `.env` file in the project root:
 
-First clone the project:
-```
-git clone https://github.com/discord/discord-example-app.git
+```env
+APP_ID=your_discord_app_id
+DISCORD_TOKEN=your_bot_token
+PUBLIC_KEY=your_discord_app_public_key
 ```
 
-Then navigate to its directory and install dependencies:
-```
-cd discord-example-app
+## Local Development
+
+Install dependencies:
+
+```bash
 npm install
 ```
-### Get app credentials
 
-Fetch the credentials from your app's settings and add them to a `.env` file (see `.env.sample` for an example). You'll need your app ID (`APP_ID`), bot token (`DISCORD_TOKEN`), and public key (`PUBLIC_KEY`).
+Register slash commands with Discord:
 
-Fetching credentials is covered in detail in the [getting started guide](https://discord.com/developers/docs/getting-started).
-
-> 🔑 Environment variables can be added to the `.env` file in Glitch or when developing locally, and in the Secrets tab in Replit (the lock icon on the left).
-
-### Install slash commands
-
-The commands for the example app are set up in `commands.js`. All of the commands in the `ALL_COMMANDS` array at the bottom of `commands.js` will be installed when you run the `register` command configured in `package.json`:
-
-```
+```bash
 npm run register
 ```
 
-### Run the app
+Start the bot:
 
-After your credentials are added, go ahead and run the app:
-
-```
-node app.js
+```bash
+npm start
 ```
 
-> ⚙️ A package [like `nodemon`](https://github.com/remy/nodemon), which watches for local changes and restarts your app, may be helpful while locally developing.
+The bot listens on port `3000`. Discord requires a public HTTPS endpoint to deliver interactions. Use [ngrok](https://ngrok.com/) to tunnel traffic locally:
 
-If you aren't following the [getting started guide](https://discord.com/developers/docs/getting-started), you can move the contents of `examples/app.js` (the finished `app.js` file) to the top-level `app.js`.
-
-### Set up interactivity
-
-The project needs a public endpoint where Discord can send requests. To develop and test locally, you can use something like [`ngrok`](https://ngrok.com/) to tunnel HTTP traffic.
-
-Install ngrok if you haven't already, then start listening on port `3000`:
-
-```
+```bash
 ngrok http 3000
 ```
 
-You should see your connection open:
+Set the **Interactions Endpoint URL** in your [Discord app settings](https://discord.com/developers/applications) to `https://your-ngrok-url.ngrok.io/interactions`.
 
-```
-Tunnel Status                 online
-Version                       2.0/2.0
-Web Interface                 http://127.0.0.1:4040
-Forwarding                    https://1234-someurl.ngrok.io -> localhost:3000
+## Docker
 
-Connections                  ttl     opn     rt1     rt5     p50     p90
-                              0       0       0.00    0.00    0.00    0.00
+Build and run with Docker Compose:
+
+```bash
+docker compose up -d --build
 ```
 
-Copy the forwarding address that starts with `https`, in this case `https://1234-someurl.ngrok.io`, then go to your [app's settings](https://discord.com/developers/applications).
+The bot expects a `cookies.txt` file (Netscape format) mounted at `/app/cookies.txt` for YouTube authentication. This is required on cloud servers where YouTube bot detection is more aggressive.
 
-On the **General Information** tab, there will be an **Interactions Endpoint URL**. Paste your ngrok address there, and append `/interactions` to it (`https://1234-someurl.ngrok.io/interactions` in the example).
+```bash
+# cookies.txt is mounted via docker-compose.yml volume
+# Export from your browser using a cookies.txt extension
+```
 
-Click **Save Changes**, and your app should be ready to run 🚀
+## Production Deployment (EC2)
 
-## Other resources
-- Read **[the documentation](https://discord.com/developers/docs/intro)** for in-depth information about API features.
-- Browse the `examples/` folder in this project for smaller, feature-specific code examples
-- Join the **[Discord Developers server](https://discord.gg/discord-developers)** to ask questions about the API, attend events hosted by the Discord API team, and interact with other devs.
-- Check out **[community resources](https://discord.com/developers/docs/topics/community-resources#community-resources)** for language-specific tools maintained by community members.
+The bot is deployed on AWS EC2 behind an nginx reverse proxy that handles SSL automatically via Let's Encrypt.
+
+### Proxy setup
+
+The `proxy` project (lives separately at `~/projects/proxy/`) must be running first:
+
+```bash
+cd ~/projects/proxy
+docker compose up -d
+```
+
+This creates the shared `proxy` Docker network and handles HTTPS for all services.
+
+### Bot deployment
+
+```bash
+cd ~/projects/discord_bot
+cp .env.example .env   # fill in your credentials
+# place cookies.txt in the project root
+docker compose up -d --build
+```
+
+### CI/CD
+
+Pushing to `main` automatically deploys to EC2 via GitHub Actions. Configure these secrets in your GitHub repository:
+
+| Secret | Value |
+|--------|-------|
+| `EC2_HOST` | EC2 public IP or hostname |
+| `EC2_USER` | SSH username (e.g. `ec2-user`) |
+| `EC2_SSH_KEY` | Private SSH key contents |
+
+## Bot Permissions
+
+When adding the bot to a server, it requires:
+
+- `applications.commands`
+- `bot` with the following permissions:
+  - Connect
+  - Speak
+  - Send Messages
