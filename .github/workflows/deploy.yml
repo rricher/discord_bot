@@ -17,6 +17,6 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
           script: |
-            cd ~/projects/discord-bot
+            cd /projects/discord_bot
             git pull
             docker compose up -d --build
