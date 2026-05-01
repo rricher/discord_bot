@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y ffmpeg curl unzip python3 make g++ && r
 RUN curl -fsSL https://deno.land/install.sh | sh
 ENV DENO_INSTALL="/root/.deno"
 ENV PATH="${DENO_INSTALL}/bin:${PATH}"
+RUN ln -s /root/.deno/bin/deno /usr/local/bin/deno
 
 WORKDIR /app
 

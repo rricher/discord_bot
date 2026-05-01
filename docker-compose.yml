@@ -8,7 +8,7 @@ services:
       - LETSENCRYPT_HOST=discord-bot.ryanricher.com
       - VIRTUAL_PORT=3000
     volumes:
-      - ./cookies.txt:/app/cookies.txt:ro
+      - ./cookies.txt:/app/cookies.txt
     networks:
       - proxy
 
