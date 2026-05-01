@@ -1,2 +1,6 @@
 node_modules
 .env
+cookies.txt
+yt-dlp
+yt-dlp.exe
+ecosystem.config.cjs
