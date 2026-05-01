@@ -4,3 +4,4 @@ cookies.txt
 yt-dlp
 yt-dlp.exe
 ecosystem.config.cjs
+.dockerignore
