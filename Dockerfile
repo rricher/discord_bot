@@ -16,7 +16,7 @@ COPY package*.json ./
 RUN npm ci --omit=dev
 
 # Copy app files
-COPY app.js commands.js voiceClient.js utils.js ./
+COPY app.js commands.js voiceClient.js utils.js join.mp3 ./
 
 # Download yt-dlp binary
 RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux -o /app/yt-dlp \
