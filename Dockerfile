@@ -1,7 +1,7 @@
 FROM node:18-slim
 
 # Install ffmpeg and curl
-RUN apt-get update && apt-get install -y ffmpeg curl unzip && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y ffmpeg curl unzip python3 make g++ && rm -rf /var/lib/apt/lists/*
 
 # Install Deno
 RUN curl -fsSL https://deno.land/install.sh | sh
