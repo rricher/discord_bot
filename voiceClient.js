@@ -108,11 +108,13 @@ function playNext(guildId) {
     '-q',
     '--cookies', join(__dirname, 'cookies.txt'),
     '--js-runtimes', 'deno:/usr/local/bin/deno',
+    '--buffer-size', '16K',
   ]);
   data.proc = proc;
+  proc.stdout.on('error', (err) => { if (err.code !== 'EPIPE') console.error('yt-dlp stdout:', err); });
   proc.stderr.on('data', (d) => console.error('yt-dlp:', d.toString().trim()));
 
-  const resource = createAudioResource(proc.stdout);
+  const resource = createAudioResource(proc.stdout, { highWaterMark: 1 << 25 });
   data.player.play(resource);
 }
 
